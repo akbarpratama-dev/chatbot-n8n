@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chatbot AI</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <style>
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { 
+        background-image: url('4840719.jpg'); 
+        background-size: cover; 
+        background-position: center; 
+        background-attachment: fixed; 
+        display: flex; 
+        justify-content: center; 
+        padding: 20px; 
+        }
+    .chat-wrapper { 
+        width: 100%; 
+        max-width: 400px; 
+        background: #ffffff; 
+        border-radius: 30px; 
+        border: 4px solid #1c86ee; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        display: flex; 
+        flex-direction: column; 
+        height: 90vh; 
+        overflow: hidden; 
+        }
+
+ 
+    .chat-header { background-color: #ffffff; color: #009dff; text-align: center; padding: 15px; font-size: 1.5em; font-weight: 600;  }
+
+
+    #chatContainer { flex: 1; padding: 15px;  display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+
+    .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; animation: fadeIn 0.3s ease-in-out; }
+    .userMessage { background-color: #1E90FF; color: #fff; align-self: flex-end; border-bottom-right-radius: 5px; }
+    .aiMessage { background-color: #e6f0ff; color: #000; align-self: flex-start; border-bottom-left-radius: 5px; }
+
+    
+    .input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: #f9fbff; }
+    #question { flex: 1; padding: 10px 15px; border-radius: 25px; border: 1px solid #ccc; outline: none; font-size: 1em; transition: border-color 0.3s; }
+    #question:focus { border-color: #1E90FF; }
+    #sendButton { margin-left: 10px; padding: 10px 20px; background-color: #1E90FF; color: #fff; border: none; border-radius: 25px; cursor: pointer; font-weight: 500; transition: background 0.3s; }
+    #sendButton:hover { background-color: #1c86ee; }
+
+    .loading { display: inline-block; position: relative; width: 40px; height: 10px; }
+    .loading span { display: inline-block; width: 8px; height: 8px; background: #1E90FF; border-radius: 50%; margin: 0 2px; animation: loading 0.6s infinite alternate; }
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes loading { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+  </style>
+</head>
+<body>
+
+<div class="chat-wrapper">
+  <div class="chat-header">Gemini KW</div>
+  <div id="chatContainer"></div>
+  <div class="input-area">
+    <input type="text" id="question" placeholder="Tulis pertanyaan Anda..." />
+    <button id="sendButton">Kirim</button>
+  </div>
+</div>
+
+<script>
+  const chatContainer = document.getElementById('chatContainer');
+  const questionInput = document.getElementById('question');
+  const sendButton = document.getElementById('sendButton');
+
+  function addMessage(text, type) {
+    const msg = document.createElement('div');
+    msg.className = 'message ' + type;
+    msg.innerHTML = text;
+    chatContainer.appendChild(msg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  function addLoading() {
+    const loading = document.createElement('div');
+    loading.className = 'message aiMessage';
+    loading.innerHTML = `<div class="loading"><span></span><span></span><span></span></div>`;
+    chatContainer.appendChild(loading);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return loading;
+  }
+
+  async function sendQuestion() {
+    const question = questionInput.value.trim();
+    if (!question) return;
+
+   
+    addMessage(question, 'userMessage');
+    questionInput.value = '';
+
+ 
+    const loadingEl = addLoading();
+
+    try {
+      const res = await fetch('http://localhost:5678/webhook/gemini-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      chatContainer.removeChild(loadingEl);
+
+      if (data.success) {
+        addMessage(data.data.answer, 'aiMessage');
+      } else {
+        addMessage('Error: ' + (data.error || data.message), 'aiMessage');
+      }
+    } catch (err) {
+      chatContainer.removeChild(loadingEl);
+      addMessage('Error connecting to webhook: ' + err.message, 'aiMessage');
+    }
+  }
+
+  sendButton.addEventListener('click', sendQuestion);
+  questionInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendQuestion(); });
+</script>
+
+</body>
+</html>

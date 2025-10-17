@@ -1,0 +1,23 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"  # port n8n editor
+    environment:
+      - GENERIC_TIMEZONE=Asia/Jakarta
+    volumes:
+      - n8n-data:/home/node/.n8n  # persistent volume untuk workflow & credential
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+    ports:
+      - "8080:80"   # port web frontend
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+volumes:
+  n8n-data:
